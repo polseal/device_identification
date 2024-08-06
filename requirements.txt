@@ -1,0 +1,6 @@
+beautifulsoup4==4.12.3
+netaddr==1.2.1
+pandas==2.0.3
+Requests==2.32.3
+scapy==2.5.0
+transformers==4.42.4
