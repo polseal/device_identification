@@ -78,10 +78,10 @@ def extract_functions(packets):
             try:
                 output = packet['Raw'].load.decode('utf-8')
                 print(output)
-                #for func in list_of_functions:
-                    #function_match = re.search(rf'.{{0,{context_radius}}}{func}.{{0,{context_radius}}}', output, re.IGNORECASE)
-                    #if function_match:
-                    #    functions.add(function_match.group(0))
+                for func in list_of_functions:
+                    function_match = re.search(rf'.{{0,{context_radius}}}{func}.{{0,{context_radius}}}', output, re.IGNORECASE)
+                    if function_match:
+                        functions.add(function_match.group(0))
             except:
                 pass
     if len(functions) != 0:
