@@ -1,7 +1,9 @@
+import csv
+
 import pandas as pd
 from transformers import pipeline
 
-from determine_the_vendor import determine_vendor
+from determine_the_vendor import determine_vendor, get_vendor_by_device_name
 
 vendors_functions = {
     "Amazon": ["Home Assistants and Speakers", "Streaming Devices"],
@@ -37,15 +39,37 @@ vendors_functions = {
     "Smarter": ["Appliances", "Hubs and Bridges"],
     "Smartphone": ["Smartphone"],
     "TP-Link": ["Bulb", "Plugs"],
-    "Withings": ["Camera", "Scale", "Sleep monitor"]
+    "Withings": ["Camera", "Scale", "Sleep monitor"],
+    "Canary": ["Camera"],
+    "August": ["Doorbell", "Smart Lock"],
+    "Carematrix": ["Blood Pressure Monitor", "Weight Scale", "Pulse Oximeter", "Glucometer"]
 }
 
 df = pd.read_csv('enriched_data2.csv', encoding='ISO-8859-1')
 classifier = pipeline("zero-shot-classification", model="FacebookAI/roberta-large-mnli")
+
 vendor = determine_vendor()
-functions = vendors_functions[vendor]
-sequence_to_classify = "This is an IoT device with the follwoing characteristics: Enriched Hostname {}," \
-                       "  Domains {}. Hostname is the most important part of this".format(df.iloc[0, 3], df.iloc[0, 2], df.iloc[0, 3], df.iloc[0, 1])
-t = classifier(sequence_to_classify, functions)
-print(t['labels'][0])
-print(t['scores'][0])
+vendor_actual_df = pd.read_csv('vendor_actual.csv')
+results = []
+for index, row in df.iterrows():
+    try:
+        vendor = get_vendor_by_device_name(row[0], vendor_actual_df)
+        functions = vendors_functions[vendor]
+        sequence_to_classify = ("This is an IoT device of the vendor {} with the following characteristics: "
+                                "Enriched Hostname {}, Domains {}. Hostname is the most important part of this."
+                                ).format(vendor, row[3], row[1])
+
+        t = classifier(sequence_to_classify, functions)
+
+        results.append({
+            'Name': row[0],
+            'Vendor': vendor,
+            'Label': t['labels'][0],
+            'Score': t['scores'][0]
+        })
+    except Exception as e:
+        print(e)
+
+results_df = pd.DataFrame(results)
+
+results_df.to_csv('results.csv', index=False)
